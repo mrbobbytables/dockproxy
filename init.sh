@@ -10,8 +10,10 @@ fi
 
 # Sets REG_PRT to 5000 only if it was not set.
 export REG_PRT=${REG_PRT:-5000}
+export REG_SEARCH=${REG_SEARCH:-disabled}
 
 echo "Starting supervsiord"
 echo "REG_ADDR: $REG_ADDR"
 echo "REG_PRT: $REG_PRT"
+echo "REG_SEARCH: $REG_SEARCH"
 supervisord -n -c /etc/supervisord/conf.d/dockproxy.conf

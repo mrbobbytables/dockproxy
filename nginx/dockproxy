@@ -1,6 +1,8 @@
 server {
     set_by_lua $reg_addr 'return os.getenv("REG_ADDR")';
     set_by_lua $reg_prt 'return os.getenv("REG_PRT")';
+    set_by_lua $reg_search 'return os.getenv("REG_PRT")';
+
 
     listen 443 default_server;
     client_max_body_size 0;
@@ -42,11 +44,14 @@ server {
         proxy_pass http://$reg_addr:$reg_prt;
     }
     location /v1/search {
+        if ($reg_search != 'enabled') {
+            return 401;
+        }
         proxy_buffering off;
         proxy_redirect off;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        
+        proxy_set header X-Real-IP $remote_addr;
+
         proxy_pass http://$reg_addr:$reg_prt;
-    }
+}
 }

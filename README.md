@@ -33,6 +33,10 @@ This build integrates http auth via the [Auth PAM](http://web.iti.upv.es/~sto/ng
  * If using a linked container:
 `docker run -d -p 443:443 --link docker-registry:DOCKREG dockproxy`
 
+By default, search is disabled. To enable it, add the following environmental variable to your docker run command:
+
+`-e REG_SEARCH=enabled`
+
 ----------
 
 
@@ -102,11 +106,17 @@ Usage is pretty simple. After building the container with the needed config chan
 
 `docker run -d -p 443:443 -e REG_ADDR=[registry_address] -e REG_PRT=[registry_port] dockproxy`
 
-Where `REG_ADDR` is the IP address of the docker registry, and `REG_PRT` is the port. If you do not set `REG_PRT` it will default to 5000.
+or
+
+`docker run -d -p 443:443 -e REG_ADDR=[registry_address] -e REG_PRT=[registry_port] -e REG_SEARCH=enabled dockproxy`
+
+if you wish to enable searching of the registry.
+
+Where `REG_ADDR` is the IP address of the docker registry, and `REG_PRT` is the port. If you do not set `REG_PRT` it will default to 5000. If you do not set `REG_SEARCH` to `enabled` it will default to `disabled`.
 
 A better option (if running the containers on the same host), is to simply link the containers together with the link alias called `DOCKREG`. The init script will parse the link information and connect to the docker registry.
 
-`docker run -d -p 443:443 --link docker-registry:DOCKREG dockproxy`
+`docker run -d -p 443:443 -e REG_SEARCH=enabled --link docker-registry:DOCKREG dockproxy`
 
 ----------
 
