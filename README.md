@@ -1,12 +1,12 @@
 # Dockproxy
 
-Dockproxy is a nginx based proxy container meant to be placed in front of the docker-registry.
+Dockproxy is a nginx based proxy container meant to be placed in front of the docker registry. Both legacy (v1) and v2 versions can be attached at the same time.
 
 This build integrates http auth via the [Auth PAM](http://web.iti.upv.es/~sto/nginx/) module available in the nginx-extras package.
 
 ### Contents
  * [Configuration and Usage](#configuration-and-Usage)
-  * [TL;DR](#tldr)
+  * [TL;DR](#tl-dr)
   * [LDAP Config](#ldap-config)
   * [SSL Cert Generation](#ssl-cert-generation)
   * [Usage](#usage)
@@ -26,16 +26,29 @@ This build integrates http auth via the [Auth PAM](http://web.iti.upv.es/~sto/ng
 #### TL;DR
 
 1. Adjust ldap conf in `nslcd/nslcd.conf`
-2. Place ssl cert (**dockproxy.key** and **dockproxy.crt**) in `nginx/ssl`
+2. Place ssl cert ( **dockproxy.key** and **dockproxy.crt** ) in `config/etc/nginx/ssl`
 3. Build and take your pick of executing the following:
  * If not using a linked container:
-`docker run -d -p 443:443 -e REG_ADDR=[registry_address] -e REG_PRT=[registry_port] dockproxy`
+
+```
+docker run -d -p 443:443 \
+-e REG_V1_ADDR=[registry_v1_address] \
+-e REG_V1_PRT=[registry_v1_port] \
+-e REG_V1_SEARCH=[enabled|disabled]
+-e REG_V2_ADDR=[registry_v2_address] \
+-e REG_V2_PRT=[registry_v2_port] \
+dockproxy
+```
+
  * If using a linked container:
-`docker run -d -p 443:443 --link docker-registry:DOCKREG dockproxy`
 
-By default, search is disabled. To enable it, add the following environmental variable to your docker run command:
-
-`-e REG_SEARCH=enabled`
+```
+docker run -d -p 443:443 \
+-e REG_V1_SEARCH=[enabled|disabled] \
+--link docker-registry-v1:DOCKREG_V1 \
+--link docker-registry-v2:DOCKREG_V2 \
+dockproxy
+```
 
 ----------
 
@@ -93,7 +106,7 @@ map    shadow    uid    sAMAccountName
 
 ----------
 #### SSL Config
-The nginx config is looking for `dockproxy.key` and `dockproxy.crt`. These should be placed in the `nginx/ssl/` folder when the container is built.
+The nginx config is looking for `dockproxy.key` and `dockproxy.crt`. These should be placed in the `config/etc/nginx/ssl/` folder when the container is built.
 
 For building and testing purposes, execute the following in the dockproxy folder to generate a cert:
 
@@ -104,19 +117,29 @@ For building and testing purposes, execute the following in the dockproxy folder
 
 Usage is pretty simple. After building the container with the needed config changes. Just execute the following:
 
-`docker run -d -p 443:443 -e REG_ADDR=[registry_address] -e REG_PRT=[registry_port] dockproxy`
+```
+docker run -d -p 443:443 \
+-e REG_V1_ADDR=[registry_v1_address] \
+-e REG_V1_PRT=[registry_v1_port] \
+-e REG_V1_SEARCH=[enabled|disabled]
+-e REG_V2_ADDR=[registry_v2_address] \
+-e REG_V2_PRT=[registry_v2_port] \
+-e REDPILL=[enabled|disabled] \
+dockproxy
+```
 
-or
+Where `REG_V1_ADDR` is the IP address of legacy docker registry, `REG_V2_ADDR` is the IP of the new (docker 1.6+) registry. and `REG_V1_PRT` / `REG_V2_PRT` is the port. In both cases, if htey are not set - it will default to 5000.
 
-`docker run -d -p 443:443 -e REG_ADDR=[registry_address] -e REG_PRT=[registry_port] -e REG_SEARCH=enabled dockproxy`
+A better option (if running the containers on the same host), is to simply link the containers together with the link alias called `DOCKREG_V1` and `DOCKREG_V2`. The init script will parse the link information and connect to the docker registry.
 
-if you wish to enable searching of the registry.
-
-Where `REG_ADDR` is the IP address of the docker registry, and `REG_PRT` is the port. If you do not set `REG_PRT` it will default to 5000. If you do not set `REG_SEARCH` to `enabled` it will default to `disabled`.
-
-A better option (if running the containers on the same host), is to simply link the containers together with the link alias called `DOCKREG`. The init script will parse the link information and connect to the docker registry.
-
-`docker run -d -p 443:443 -e REG_SEARCH=enabled --link docker-registry:DOCKREG dockproxy`
+```
+docker run -d -p 443:443 \
+-e REG_V1_SEARCH=[enabled|disabled] \
+-e REDPILL=[enabled|disabled] \
+--link docker-registry-v1:DOCKREG_V1 \
+--link docker-registry-v2:DOCKREG_V2 \
+dockproxy
+```
 
 ----------
 
@@ -139,6 +162,9 @@ Then attempt to login to the proxy via a browser and watch the output from `nslc
 Did you use a DNS name instead of an IP? If you used a DNS name and it's changed IPs you're gonna have a bad time...
 
 By default nginx does not attempt to re-resolve an address. For this it requires a resolver. Please see the [nginx docs](http://nginx.org/en/docs/http/ngx_http_core_module.html#resolver) for more information, and adjust the config as needed.
+
+#### Redpill
+Redpill (`config/redpill.sh`) is a small bash script that monitors both Nginx and nslcd. If either should fail unexpectantly too many times in a row, supervisor will set them into a failed state. Once in a failed state, redpill will kill supervisor causing the container to terminate. This can be turned off by setting the environment variable `REDPILL` equal to `disabled`.
 
 
 ----------
@@ -172,13 +198,6 @@ server {
     }
  }
 ```
-
-After you do all that, the supervisord config at `supervisor/dockproxy.conf` will need to be modified. Add any extra envirment variables to the `environment` config using the format of `%(ENV_[env var name])s`. Here is an example from the config:
-
-`environment=REG_ADDR=%(ENV_REG_ADDR)s`
-
-
-For further supervisord config information, please see the docs here: http://supervisord.org
 
 ----------
 #### Worker and Connection Tuning
