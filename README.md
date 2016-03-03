@@ -37,6 +37,7 @@ docker run -d -p 443:443 \
 -e REG_V1_SEARCH=[enabled|disabled]
 -e REG_V2_ADDR=[registry_v2_address] \
 -e REG_V2_PRT=[registry_v2_port] \
+-e BIND_PASSWORD=[bind_password] \
 dockproxy
 ```
 
@@ -47,6 +48,7 @@ docker run -d -p 443:443 \
 -e REG_V1_SEARCH=[enabled|disabled] \
 --link docker-registry-v1:DOCKREG_V1 \
 --link docker-registry-v2:DOCKREG_V2 \
+-e BIND_PASSWORD=[bind_password] \
 dockproxy
 ```
 
@@ -125,6 +127,7 @@ docker run -d -p 443:443 \
 -e REG_V2_ADDR=[registry_v2_address] \
 -e REG_V2_PRT=[registry_v2_port] \
 -e REDPILL=[enabled|disabled] \
+-e BIND_PASSWORD=[bind_password] \
 dockproxy
 ```
 
@@ -136,6 +139,7 @@ A better option (if running the containers on the same host), is to simply link 
 docker run -d -p 443:443 \
 -e REG_V1_SEARCH=[enabled|disabled] \
 -e REDPILL=[enabled|disabled] \
+-e BIND_PASSWORD=[bind_password] \
 --link docker-registry-v1:DOCKREG_V1 \
 --link docker-registry-v2:DOCKREG_V2 \
 dockproxy
