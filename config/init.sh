@@ -15,6 +15,9 @@ if [[ -z "$REG_V1_ADDR" ]] && [[ -z "$REG_V2_ADDR" ]]; then
     exit
 fi
 
+# Set the LDAP Bind password in runtime.
+BIND_PASSWORD=${BIND_PASSWORD:-defaultpassword}
+sed -i "s/BIND_PASSWORD/$BIND_PASSWORD/" /etc/nslcd.conf
 
 # Sets REG_V1_PRT to 5000 only if it was not set.
 export REG_V1_PRT=${REG_V1_PRT:-5000}
@@ -22,10 +25,9 @@ export REG_V1_SEARCH=${REG_V1_SEARCH:-disabled}
 export REG_V2_PRT=${REG_V2_PRT:-5000}
 export REDPILL=${REDPILL:-enabled}
 
+# Redpill is enabled by default
 if [ "$REDPILL" == "disabled" ] && [ -e /etc/supervisor/conf.d/999-redpill.conf ]; then
     mv /etc/supervisor/conf.d/999-redpill.conf /etc/supervisor/conf.d/999-redpill.disabled
-elif [ "$REDPILL" == "enabled" ] && [ -e /etc/supervisor/conf.d/999-redpill.disabled ]; then
-    mv /etc/supervisor/conf.d/999-redpill.disabled /etc/supervisor/conf.d/999-redpill.conf
 fi
 
 
